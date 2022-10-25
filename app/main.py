@@ -1,29 +1,23 @@
-from pyexpat import model
+#from pyexpat import model
 from typing import Optional
 from fastapi import (FastAPI , Response ,
                      status , HTTPException , Depends )
 # Using pydantic to create schema and for validations 
+from fastapi import Body 
 from pydantic import BaseModel
 import psycopg2
 # to include the column name we need to use RealDictCursor
 from psycopg2.extras import RealDictCursor
-import time 
-from . import models
-from .database import SessionLocal, enging
+import time
 from sqlalchemy.orm import Session
+from . import models 
+from .database import engine , get_db
+
+## Creating SQLAlchemy enging 
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI() 
 
-## Creating SQLAlchemy enging 
-model.Base.metadata.create_all(bind=enging)
-
-# Dependinses 
-def get_db():
-    db =  SessionLocal() 
-    try:
-        yield db 
-    finally:
-        db.close()
 
 # Setting up DB connection 
 
@@ -149,6 +143,5 @@ def test_post(db: Session = Depends(get_db)):
 # Starting webserver with uvicorn 
 
 # bash: uvicorn main:app 
-
 
 
