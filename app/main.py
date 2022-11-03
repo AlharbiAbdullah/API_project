@@ -1,4 +1,3 @@
-#from pyexpat import model
 from typing import Optional
 from fastapi import (FastAPI , Response ,
                      status , HTTPException , Depends )
@@ -18,29 +17,6 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI() 
 
-
-# Setting up DB connection 
-
-# While loop to loop until the connection is succesfull
-# Because we dont want to let api work untill we connect to the DB
-while True:
-
-    try:
-        conn = psycopg2.connect(
-            host='localhost' , 
-            database= 'fastAPI' , 
-            user='postgres' , 
-            password='@!Alaa2233' , 
-            cursor_factory= RealDictCursor
-        )
-        cursor = conn.cursor()
-        print('Database connection was succesfull')
-        break
-
-    except Exception as error:
-        print('connection to the Database failed')
-        print('Error: ' , error)
-        time.sleep(5)
 
 # Schema definition  
 class Post(BaseModel):
@@ -67,13 +43,7 @@ my_posts = [
     }
 ] 
 
-# to be removed: getting the id for /posts/id 
 
-def find_id(id):
-    for p in my_posts:
-        if p['id'] == id:
-            return p 
-        
 
 # GET 
 @app.get('/')
@@ -83,30 +53,18 @@ def root():
 
 # GET posts 
 @app.get('/posts')
-def get_posts():
-    cursor.execute("""
-            SELECT *
-            FROM public.POSTS
-            """)
-    posts = cursor.fetchall()
-    return {
-        'data' : posts 
+def get_posts(db: Session = Depends(get_db)):
+    posts = db.query(models.Post).all() 
+    return{
+        'data' : posts
     }
-
 
 
 # GET by ID 
 @app.get('/posts/{id}')
-def get_post(id: int , response: Response):
-    cursor.execute(f""" 
-                        SELECT 
-                            *
-                        FROM 
-                            POSTS 
-                        WHERE 
-                            Id = {id}""")
-    post = cursor.fetchall()
-
+def get_post(id: int , status_code = status.HTTP_200_OK,
+            db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == id).first()
     if not post:
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
                                 detail=f'post with id: {id} was not found.')
@@ -132,16 +90,9 @@ def create_data(post: Post):
         "new_data" : new_post
     }
 
+"""
+Starting webserver with uvicorn 
 
-# For testing sqlalchemy 
-
-app.get('/sal')
-def test_post(db: Session = Depends(get_db)):
-    return {'status' : 'Good'}
-
-
-# Starting webserver with uvicorn 
-
-# bash: uvicorn main:app 
-
+ terminal: uvicorn main:app 
+"""
 
