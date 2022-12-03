@@ -1,5 +1,5 @@
 from sqlalchemy import (TIMESTAMP, Boolean, Column, 
-                    ForeignKey, Integer, String, text)
+                     Integer, String, text)
 from .database import Base
 
 class Post(Base):
@@ -11,6 +11,3 @@ class Post(Base):
     published = Column(Boolean , server_default = 'True')
     created_at = Column(TIMESTAMP(timezone=True), nullable=False , 
                                     server_default=text('now()'))
-    
-
-
