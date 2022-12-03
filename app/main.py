@@ -80,6 +80,57 @@ def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)
     db.commit()
     return query.first()
 
+# Users requests
+
+#get users 
+@app.get('/users' ,status_code= status.HTTP_200_OK)
+def get_users(db: Session = Depends(get_db)):
+    users = db.query(models.User).all()
+    return users
+
+#get users by id 
+@app.get('/users/{id}', status_code= status.HTTP_200_OK)
+def get_user_by_id(id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == id).first()
+    if not user:
+        raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
+                                detail=f'post with id: {id} was not found.')
+    return user
+
+#create user 
+@app.post('/users' , response_model= schemas.UserOut,
+            status_code=status.HTTP_201_CREATED)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    new_user= models.User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+# Update a user 
+@app.put('/users/{id}' , status_code= status.HTTP_202_ACCEPTED)
+def update_user(id: int, user: schemas.UserCreate, 
+                db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.id == id)
+    if not db_user.first():
+        raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
+                                detail=f'post with id: {id} was not found.')
+    db_user.update(user.dict())
+    db.commit()
+    return db_user.first()
+
+# Delete a user 
+@app.delete('/users/{id}', status_code= status.HTTP_204_NO_CONTENT)
+def delete_user(id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == id)
+    if not user.first():
+        raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
+                                detail=f'post with id: {id} was not found.')
+    db.delete(user.first())
+    db.commit()
+    return
+
+
 """
 Starting webserver with uvicorn 
 
