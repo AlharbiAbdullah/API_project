@@ -1,6 +1,8 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
+# Using pydantic to create schema and for validations 
+
 # pydantic model 
 class PostBase(BaseModel):
     title: str 
@@ -44,3 +46,10 @@ class UserOut(BaseModel):
 
     class Config():
         orm_mode = True
+
+# Login class 
+
+class Login(BaseModel):
+    email: EmailStr 
+    password: str 
+
