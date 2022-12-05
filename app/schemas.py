@@ -19,6 +19,7 @@ class PostCreate(PostBase):
 class ResponseBase(BaseModel):
     title: str 
     content: str
+    owner_id: str 
 
     class Config():
         orm_mode = True
