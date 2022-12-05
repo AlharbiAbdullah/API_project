@@ -1,4 +1,4 @@
-from .. import models, schemas
+from .. import models, schemas, oath2
 from typing import List
 from fastapi import ( FastAPI , status , 
                     HTTPException , Depends, APIRouter)
@@ -31,8 +31,10 @@ def get_post(id: int, db: Session = Depends(get_db)):
 # Create 
 @router.post('/' ,  response_model= schemas.PostResponse, 
             status_code=status.HTTP_201_CREATED)
-def create_data(post: schemas.PostCreate, db: Session = Depends(get_db)):
-
+def create_data(post: schemas.PostCreate, 
+                db: Session = Depends(get_db),
+                current_user: int =  Depends(oath2.get_current_user)):
+    print(current_user)
     new_post = models.Post(**post.dict())
     db.add(new_post)
     db.commit()
@@ -43,7 +45,8 @@ def create_data(post: schemas.PostCreate, db: Session = Depends(get_db)):
 
 # Delete 
 @router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db)):
+def delete_post(id: int, db: Session = Depends(get_db), 
+                current_user: int =  Depends(oath2.get_current_user)):
     post = db.query(models.Post).filter(models.Post.id == id)
     if not post.first():
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
@@ -54,7 +57,9 @@ def delete_post(id: int, db: Session = Depends(get_db)):
 
 # Update
 @router.put('/{id}', status_code= status.HTTP_202_ACCEPTED)
-def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)):
+def update_post(id: int, post: schemas.PostCreate, 
+                db: Session = Depends(get_db) , 
+                current_user: int =  Depends(oath2.get_current_user)):
 
     query = db.query(models.Post).filter(models.Post.id == id)
 

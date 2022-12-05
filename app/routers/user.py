@@ -1,4 +1,4 @@
-from .. import models, schemas, utils
+from .. import models, schemas, utils, oath2
 from typing import List
 from fastapi import ( FastAPI, status , 
                     HTTPException , Depends, APIRouter)
@@ -30,8 +30,9 @@ def get_user_by_id(id: int, db: Session = Depends(get_db)):
 #create user 
 @router.post('/' , response_model= schemas.UserOut,
             status_code=status.HTTP_201_CREATED)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-
+def create_user( user: schemas.UserCreate,
+                 db: Session = Depends(get_db), 
+                 current_user: int =  Depends(oath2.get_current_user)):
     # Hashing the password  - user.password 
     user.password = utils.hash(user.password)
     new_user= models.User(**user.dict())
@@ -44,7 +45,8 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 @router.put('/{id}' , response_model=schemas.UserOut,
                      status_code= status.HTTP_202_ACCEPTED)
 def update_user(id: int, user: schemas.UserCreate, 
-                db: Session = Depends(get_db)):
+                db: Session = Depends(get_db),
+                current_user: int =  Depends(oath2.get_current_user)):
     db_user = db.query(models.User).filter(models.User.id == id)
     if not db_user.first():
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
@@ -55,7 +57,8 @@ def update_user(id: int, user: schemas.UserCreate,
 
 # Delete a user 
 @router.delete('/{id}', status_code= status.HTTP_204_NO_CONTENT)
-def delete_user(id: int, db: Session = Depends(get_db)):
+def delete_user(id: int, db: Session = Depends(get_db), 
+                current_user: int =  Depends(oath2.get_current_user)):
     user = db.query(models.User).filter(models.User.id == id)
     if not user.first():
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
