@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
-
+from pydantic.types import conint
 # Using pydantic to create schema and for validations 
 
 # pydantic model 
@@ -69,6 +69,13 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: Optional[str] = None
+
+# Voting schema 
+
+class Vote(BaseModel):
+    post_id: int 
+    # conint -> to inforce the dir to be 0 or 1
+    dir: conint(ge=0, le=1) 
 
      
 
