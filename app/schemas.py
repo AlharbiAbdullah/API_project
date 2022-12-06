@@ -5,6 +5,26 @@ from typing import Optional
 # Using pydantic to create schema and for validations 
 
 # pydantic model 
+
+
+
+#returning users 
+# user out has to be above posts becuase we want to retrive users within posts 
+class UserOut(BaseModel):
+    id: int 
+    email: EmailStr
+    created_at: datetime
+
+    class Config():
+        orm_mode = True
+
+# User model 
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str 
+
+
+# posts 
 class PostBase(BaseModel):
     title: str 
     content: str 
@@ -19,7 +39,7 @@ class PostCreate(PostBase):
 class ResponseBase(BaseModel):
     title: str 
     content: str
-    owner_id: str 
+    owner: UserOut 
 
     class Config():
         orm_mode = True
@@ -33,21 +53,6 @@ class PostResponse(PostBase):
 # get response 
 class GetResponse(ResponseBase):
     pass
-
-# User model 
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str 
-
-
-#returning users 
-class UserOut(BaseModel):
-    id: int 
-    email: EmailStr
-    created_at: datetime
-
-    class Config():
-        orm_mode = True
 
 # Login class 
 

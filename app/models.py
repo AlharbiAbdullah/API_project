@@ -1,6 +1,7 @@
 from sqlalchemy import (TIMESTAMP, Boolean, Column, ForeignKey,
                         Integer, String, text)
 from .database import Base
+from sqlalchemy.orm import relationship
 
 
 # Posts model
@@ -16,6 +17,10 @@ class Post(Base):
 
     # Fkey
     owner_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
+
+    # creating a relationship 
+    owner = relationship('User') 
+
 
 
 # Users Models 

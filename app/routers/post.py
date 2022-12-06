@@ -1,5 +1,5 @@
 from .. import models, schemas, oath2
-from typing import List
+from typing import List, Optional
 from fastapi import ( FastAPI , status , 
                     HTTPException , Depends, APIRouter)
 from sqlalchemy.orm import Session
@@ -13,20 +13,29 @@ router = APIRouter(
 # GET posts 
 @router.get('/', response_model= List[schemas.GetResponse],
         status_code= status.HTTP_200_OK)
-def get_posts(db: Session = Depends(get_db)):
-    posts = db.query(models.Post).all() 
+def get_posts(  db: Session = Depends(get_db),
+                current_user: int =  Depends(oath2.get_current_user), 
+                limit: int = 3, 
+                skip: int = 0, 
+                search: Optional[str] = ''):
+    posts = db.query(models.Post)\
+        .filter(models.Post.title.contains(search))\
+        .limit(limit)\
+        .offset(skip)\
+        .all()
     return posts
 
 # GET by ID 
 @router.get('/{id}', response_model= schemas.GetResponse,
             status_code = status.HTTP_200_OK)
-def get_post(id: int, db: Session = Depends(get_db)):
-    post = db.query(models.Post).filter(models.Post.id == id).first()
+def get_post(id: int, db: Session = Depends(get_db),
+            current_user: int =  Depends(oath2.get_current_user)):
+    post_query = db.query(models.Post).filter(models.Post.id == id)
+    post = post_query.first()
     if not post:
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
                                 detail=f'post with id: {id} was not found.')
     return post
-
 
 # Create 
 @router.post('/' ,  response_model= schemas.PostResponse, 
@@ -34,8 +43,10 @@ def get_post(id: int, db: Session = Depends(get_db)):
 def create_data(post: schemas.PostCreate, 
                 db: Session = Depends(get_db),
                 current_user: int =  Depends(oath2.get_current_user)):
-    print(current_user)
-    new_post = models.Post(**post.dict())
+    print(current_user.id)
+    # To connect the user with data being posted, we get the ID from current_user
+    # and append it to the dict
+    new_post = models.Post(owner_id= current_user.id , **post.dict())
     db.add(new_post)
     db.commit()
 
@@ -47,11 +58,16 @@ def create_data(post: schemas.PostCreate,
 @router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int, db: Session = Depends(get_db), 
                 current_user: int =  Depends(oath2.get_current_user)):
-    post = db.query(models.Post).filter(models.Post.id == id)
-    if not post.first():
+    post_query = db.query(models.Post).filter(models.Post.id == id)
+    post = post_query.first()
+    if not post:
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
                                 detail=f'post with id: {id} was not found.')
-    db.delete(post.first())
+    # check if the user own the post 
+    if post.owner_id != current_user.id:
+        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN,
+                            detail= 'not authorized to preforme requested action')
+    db.delete(post)
     db.commit()
     return 
 
@@ -62,11 +78,15 @@ def update_post(id: int, post: schemas.PostCreate,
                 current_user: int =  Depends(oath2.get_current_user)):
 
     query = db.query(models.Post).filter(models.Post.id == id)
+    record = query.first()
 
-    if not query.first():
+    if not record:
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
                                 detail=f'post with id: {id} was not found.')
-
+    # If user not authorized to make chenges 
+    if record.owner_id != current_user.id:
+        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN,
+                            detail= 'not authorized to preforme requested action')
     query.update(post.dict(), synchronize_session= False)
     db.commit()
     return query.first()
