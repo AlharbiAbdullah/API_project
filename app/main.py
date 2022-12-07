@@ -4,8 +4,9 @@ from .database import engine
 from .routers import post , user, auth, vote
 
 
+# Since we use Alembic for DDL, we don't need this line
 ## Creating SQLAlchemy enging 
-models.Base.metadata.create_all(bind=engine)
+#models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI() 
 app.include_router(post.router)
