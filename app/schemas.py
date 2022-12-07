@@ -39,6 +39,7 @@ class PostCreate(PostBase):
 class ResponseBase(BaseModel):
     title: str 
     content: str
+    owner_id: str
     owner: UserOut 
 
     class Config():
@@ -53,6 +54,14 @@ class PostResponse(PostBase):
 # get response 
 class GetResponse(ResponseBase):
     pass
+
+# Posts with votes 
+class PostOut(BaseModel):
+    Post: ResponseBase
+    votes_count: int
+
+    class Config():
+        orm_mode = True
 
 # Login class 
 

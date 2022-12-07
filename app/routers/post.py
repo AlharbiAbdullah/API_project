@@ -4,6 +4,7 @@ from fastapi import ( FastAPI , status ,
                     HTTPException , Depends, APIRouter)
 from sqlalchemy.orm import Session
 from ..database import get_db
+from sqlalchemy import func
 
 router = APIRouter(
     prefix= '/posts', 
@@ -11,14 +12,19 @@ router = APIRouter(
 ) 
 
 # GET posts 
-@router.get('/', response_model= List[schemas.GetResponse],
+#router.get('/', response_model= List[schemas.GetResponse],
+@router.get('/',
+         response_model= List[schemas.PostOut],
         status_code= status.HTTP_200_OK)
 def get_posts(  db: Session = Depends(get_db),
                 current_user: int =  Depends(oath2.get_current_user), 
                 limit: int = 3, 
                 skip: int = 0, 
                 search: Optional[str] = ''):
-    posts = db.query(models.Post)\
+
+    posts = db.query(models.Post, func.count(models.Vote.post_id).label('votes_count'))\
+        .join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True)\
+        .group_by(models.Post.id)\
         .filter(models.Post.title.contains(search))\
         .limit(limit)\
         .offset(skip)\
@@ -26,12 +32,14 @@ def get_posts(  db: Session = Depends(get_db),
     return posts
 
 # GET by ID 
-@router.get('/{id}', response_model= schemas.GetResponse,
+@router.get('/{id}', response_model= schemas.PostOut,
             status_code = status.HTTP_200_OK)
 def get_post(id: int, db: Session = Depends(get_db),
             current_user: int =  Depends(oath2.get_current_user)):
-    post_query = db.query(models.Post).filter(models.Post.id == id)
-    post = post_query.first()
+    post = db.query(models.Post, func.count(models.Vote.post_id).label('votes_count'))\
+        .join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True)\
+        .group_by(models.Post.id)\
+        .first()
     if not post:
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND , 
                                 detail=f'post with id: {id} was not found.')
