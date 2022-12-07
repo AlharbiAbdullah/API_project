@@ -31,8 +31,7 @@ def get_user_by_id(id: int, db: Session = Depends(get_db)):
 @router.post('/' , response_model= schemas.UserOut,
             status_code=status.HTTP_201_CREATED)
 def create_user( user: schemas.UserCreate,
-                 db: Session = Depends(get_db), 
-                 current_user: int =  Depends(oath2.get_current_user)):
+                 db: Session = Depends(get_db)):
     # Hashing the password  - user.password 
     user.password = utils.hash(user.password)
     new_user= models.User(**user.dict())
